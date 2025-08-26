@@ -58,9 +58,7 @@ const CommonProductCard = ({
         <div className="border-b border-1 border-[#BDBDBD33] mb-4" />
         <CommonButton
           label={"Send Enquiry"}
-          onClick={function (): void {
-            throw new Error("Function not implemented.");
-          }}
+          onClick={() => console.log("Product name", name)}
           width="100%"
           height="auto"
           className="button_fill !rounded-[5.79px]"

@@ -1,7 +1,7 @@
 import mongoose, { Mongoose } from "mongoose";
 
 const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/zedexel";
+  process.env.MONGODB_URI || "mongodb://localhost:0000/zedexel";
 
 if (!MONGODB_URI) {
   throw new Error("Please add MONGODB_URI in .env.local");

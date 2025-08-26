@@ -1,18 +1,20 @@
+import { useAppDispatch } from "@/redux/hooks";
+import { fetchProducts } from "@/store/slices/productSlice";
+import { RootState } from "@/store/store";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useDebounceCallback } from "@react-hook/debounce";
+import Header from "@/components/Header";
 import Banner from "@/components/Banner";
 import CommonButton from "@/components/common/buttons/CommonButton";
 import CommonProductCard from "@/components/common/cards/CommonProductCard";
 import CommonDropdown from "@/components/common/formHelpers/CommonDropdown";
 import CommonSearchField from "@/components/common/formHelpers/CommonSearchField";
-import Header from "@/components/Header";
-import { useAppDispatch } from "@/redux/hooks";
-import { fetchProducts } from "@/store/slices/productSlice";
-import { RootState } from "@/store/store";
-import axios from "axios";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useSelector } from "react-redux";
-import { useDebounceCallback } from "@react-hook/debounce";
 import FilterSection from "@/components/FilterSection";
+import ProductDetailsPopup from "@/components/ProductDetailsPopup";
 import { categoryies, statuses } from "@/utils/const";
+import { IProduct } from "@/interfaces";
+import axios from "axios";
+import { useSelector } from "react-redux";
 
 interface PaginationProps {
   totalPages: number;
@@ -29,7 +31,6 @@ const Pagination: React.FC<PaginationProps> = ({
     <div className="flex flex-col items-center">
       <div className="flex justify-center items-center mt-6 sm:mt-8">
         <nav className="flex items-center space-x-1 sm:space-x-2">
-          {/* Previous button */}
           <button
             onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
             disabled={currentPage === 1}
@@ -37,8 +38,6 @@ const Pagination: React.FC<PaginationProps> = ({
           >
             Previous
           </button>
-
-          {/* Page numbers */}
           {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
             <button
               key={page}
@@ -52,8 +51,6 @@ const Pagination: React.FC<PaginationProps> = ({
               {page}
             </button>
           ))}
-
-          {/* Next button */}
           <button
             onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
             disabled={currentPage === totalPages}
@@ -74,6 +71,7 @@ export default function Home() {
   const [checkedStaus, setCheckedStaus] = useState<string[]>([]);
   const [sortOption, setSortOption] = useState<"latest" | "oldest">("latest");
   const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedProduct, setSelectedProduct] = useState<IProduct | null>(null); // State for popup
 
   const { products, loading, createUpdateLoaing, error } = useSelector(
     (state: RootState) => state.product
@@ -93,7 +91,7 @@ export default function Home() {
 
   const categoriesforFilter = useMemo(() => {
     return [
-      { name: "All", count: products.length }, // "All" option
+      { name: "All", count: products.length },
       ...categoryies.map((category) => ({
         name: category,
         count: products.filter((p) => p.category === category).length,
@@ -102,10 +100,8 @@ export default function Home() {
   }, [products]);
 
   const itemsPerPage = 8;
-
   const totalPages = Math.ceil(products.length / itemsPerPage);
 
-  // Get current products for page
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentProducts = products.slice(indexOfFirstItem, indexOfLastItem);
@@ -124,7 +120,6 @@ export default function Home() {
     [dispatch]
   );
 
-  // Debounce it for 500ms
   const debouncedFetch = useDebounceCallback(fetchFilteredProducts, 500);
 
   useEffect(() => {
@@ -153,21 +148,13 @@ export default function Home() {
       search: searchQuery,
       sort: sortOption,
     });
-  }, [
-    checkedCategories,
-    checkedStaus,
-    searchQuery,
-    sortOption,
-    debouncedFetch,
-  ]);
+  }, [checkedCategories, checkedStaus, searchQuery, sortOption, debouncedFetch]);
 
   return (
     <>
-      {/* Header */}
       <Header />
       <div className="mx-4 sm:mx-8 md:mx-16 lg:mx-[64px]">
         <Banner />
-
         <div className="min-h-screen">
           <div className="container mx-auto p-4 sm:p-6">
             <div className="flex flex-col lg:flex-row gap-6">
@@ -185,7 +172,7 @@ export default function Home() {
                     className="button_no_fill !text-[#726C6C] !border-[#726C6C] border hover:!bg-[#726C6C] hover:!text-white"
                   />
                 </div>
-                <div className="bg-white p-4 rounded-lg shadow-sm ">
+                <div className="bg-white p-4 rounded-lg shadow-sm">
                   <FilterSection
                     key={"Status"}
                     title="Status"
@@ -234,7 +221,6 @@ export default function Home() {
                         setSearchQuery(query);
                       }}
                     />
-
                     <CommonDropdown
                       key="dropdown_result"
                       options={["latest", "oldest"]}
@@ -247,10 +233,13 @@ export default function Home() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                   {currentProducts.map((product, index) => (
-                    <CommonProductCard
+                    <div
                       key={product?._id || index}
-                      productData={product}
-                    />
+                      onClick={() => setSelectedProduct(product)} // Trigger popup
+                      className="cursor-pointer"
+                    >
+                      <CommonProductCard productData={product} />
+                    </div>
                   ))}
                 </div>
                 <Pagination
@@ -263,6 +252,12 @@ export default function Home() {
           </div>
         </div>
       </div>
+      {selectedProduct && (
+        <ProductDetailsPopup
+          product={selectedProduct}
+          onClose={() => setSelectedProduct(null)} // Close popup
+        />
+      )}
     </>
   );
 }

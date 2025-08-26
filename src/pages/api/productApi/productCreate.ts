@@ -1,10 +1,4 @@
-import formidable, {
-  IncomingForm,
-  Part,
-  Files,
-  Fields,
-  File,
-} from "formidable";
+import { IncomingForm, Part, Files, Fields, File } from "formidable";
 import { v2 as cloudinary } from "cloudinary";
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/product";
