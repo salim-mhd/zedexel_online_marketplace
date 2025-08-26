@@ -44,10 +44,10 @@ export default function RegisterForm() {
         });
         setTimeout(() => router.push("/"), 2000);
       } else {
-        toast.error(
-          (res.payload as string) || "Registration failed",
-          { position: "top-right", autoClose: 3000 }
-        );
+        toast.error((res.payload as string) || "Registration failed", {
+          position: "top-right",
+          autoClose: 3000,
+        });
       }
     } catch (err: unknown) {
       if (isAxiosError(err)) {
@@ -115,12 +115,12 @@ export default function RegisterForm() {
         </form>
         <p className="mt-5 text-center text-sm text-gray-600">
           Already have an account?{" "}
-          <a
-            href="/login"
+          <span
+            onClick={() => router.replace("/login")}
             className="text-indigo-600 font-medium hover:underline"
           >
             Login
-          </a>
+          </span>
         </p>
       </div>
     </div>
