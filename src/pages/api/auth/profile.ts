@@ -10,7 +10,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const user = verifyToken(req); // passing req with headers
     return res.status(200).json({ message: "User profile", user });
-  } catch (error: any) {
-    return res.status(401).json({ error: error.message });
+  } catch (error: unknown) {
+    let message = "Unauthorized";
+
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
+    return res.status(401).json({ error: message });
   }
 }

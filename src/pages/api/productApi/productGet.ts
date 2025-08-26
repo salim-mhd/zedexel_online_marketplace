@@ -4,20 +4,25 @@ import jwt from "jsonwebtoken";
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/product";
 
-
 export async function GET(req: NextRequest) {
   try {
     await dbConnect();
 
     const token = req.headers.get("authorization")?.split(" ")[1];
     if (!token) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
     try {
       jwt.verify(token, process.env.JWT_SECRET || "your-jwt-secret");
-    } catch (error) {
-      return NextResponse.json({ success: false, message: "Invalid token" }, { status: 401 });
+    } catch {
+      return NextResponse.json(
+        { success: false, message: "Invalid token" },
+        { status: 401 }
+      );
     }
 
     const id = req.nextUrl.searchParams.get("id");
@@ -30,19 +35,18 @@ export async function GET(req: NextRequest) {
           { status: 404 }
         );
       }
-      return NextResponse.json({
-        success: true,
-        data: product,
-      });
+      return NextResponse.json({ success: true, data: product });
     }
 
     const products = await Product.find();
-    return NextResponse.json({
-      success: true,
-      data: products,
-    });
-  } catch (error: any) {
-    console.error("Get products error:", error);
+    return NextResponse.json({ success: true, data: products });
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Get products error:", error.message);
+    } else {
+      console.error("Get products unknown error:", error);
+    }
+
     return NextResponse.json(
       { success: false, message: "Server error" },
       { status: 500 }

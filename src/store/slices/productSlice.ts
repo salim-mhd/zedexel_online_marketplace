@@ -1,11 +1,10 @@
+import { IProduct } from "@/interfaces";
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import axios, { AxiosError } from "axios";
-import { RootState } from "../store";
-import { Product } from "@/interfaces";
 
 interface ProductState {
-  products: Product[];
-  product: Product | null;
+  products: IProduct[];
+  product: IProduct | null;
   loading: boolean;
   createUpdateLoaing: boolean;
   error: string | null;
@@ -21,7 +20,7 @@ const initialState: ProductState = {
 
 // Fetch all products
 export const fetchProducts = createAsyncThunk<
-  Product[],
+  IProduct[],
   {
     category?: string[];
     status?: string[];
@@ -46,7 +45,7 @@ export const fetchProducts = createAsyncThunk<
       }
     );
 
-    return res.data.products as Product[];
+    return res.data.products as IProduct[];
   } catch (err: unknown) {
     let errorMessage = "Failed to fetch products";
 
@@ -61,7 +60,7 @@ export const fetchProducts = createAsyncThunk<
 // Create product with FormData
 
 export const createProduct = createAsyncThunk<
-  Product,
+  IProduct,
   FormData,
   { rejectValue: string }
 >("product/create", async (formData, thunkAPI) => {
@@ -73,7 +72,7 @@ export const createProduct = createAsyncThunk<
         "Content-Type": "multipart/form-data",
       },
     });
-    return res.data.product as Product;
+    return res.data.product as IProduct;
   } catch (err: unknown) {
     // Narrow the type here
     let errorMessage = "Failed to create product";

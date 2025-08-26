@@ -1,4 +1,10 @@
-import formidable, { IncomingForm, Part } from "formidable";
+import formidable, {
+  IncomingForm,
+  Part,
+  Files,
+  Fields,
+  File,
+} from "formidable";
 import { v2 as cloudinary } from "cloudinary";
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/product";
@@ -33,26 +39,20 @@ export default async function handler(
   }
 
   await dbConnect();
-  console.log("MongoDB connected");
 
   const form = new IncomingForm({
     maxFileSize: 5 * 1024 * 1024, // 5MB limit
-    filter: ({ mimetype }: Part): boolean => {
-      return (
-        mimetype !== null && ["image/jpeg", "image/png"].includes(mimetype)
-      );
-    },
+    filter: ({ mimetype }: Part): boolean =>
+      mimetype !== null && ["image/jpeg", "image/png"].includes(mimetype),
   });
 
-  form.parse(req, async (err, fields, files) => {
+  form.parse(req, async (err: Error | null, fields: Fields, files: Files) => {
     if (err) {
       console.error("Form parsing error:", err);
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: `Failed to parse form data: ${err.message}`,
-        });
+      return res.status(500).json({
+        success: false,
+        message: `Failed to parse form data: ${err.message}`,
+      });
     }
 
     const name = Array.isArray(fields.name) ? fields.name[0] : fields.name;
@@ -69,10 +69,11 @@ export default async function handler(
     const vendor = Array.isArray(fields.vendor)
       ? fields.vendor[0]
       : fields.vendor;
-    const imageFile =
+
+    const imageFile: File | null =
       Array.isArray(files.image) && files.image.length > 0
         ? files.image[0]
-        : null;
+        : (files.image as unknown as File | null);
 
     if (
       !name ||
@@ -83,21 +84,10 @@ export default async function handler(
       !vendor ||
       !imageFile
     ) {
-      console.error("Missing fields:", {
-        name,
-        price,
-        stockQuantity,
-        category,
-        status,
-        vendor,
-        imageFile,
+      return res.status(400).json({
+        success: false,
+        message: "All fields including image are required",
       });
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "All fields including image are required",
-        });
     }
 
     if (isNaN(Number(price)) || Number(price) < 0) {
@@ -111,7 +101,6 @@ export default async function handler(
     }
 
     if (!["Active", "Inactive", "Out of Stock"].includes(status)) {
-      console.error("Invalid status:", status);
       return res.status(400).json({
         success: false,
         message: "Status must be one of: Active, Inactive, Out of Stock",
@@ -119,7 +108,6 @@ export default async function handler(
     }
 
     try {
-      console.log("Uploading image to Cloudinary:", imageFile.filepath);
       const uploadResult = await cloudinary.uploader.upload(
         imageFile.filepath,
         {
@@ -127,65 +115,60 @@ export default async function handler(
           resource_type: "image",
         }
       );
-      console.log("Cloudinary upload result:", uploadResult);
 
       const imageUrl = uploadResult.secure_url || uploadResult.url;
       if (!imageUrl) {
-        console.error(
-          "Cloudinary upload missing secure_url or url:",
-          uploadResult
-        );
-        return res
-          .status(500)
-          .json({
-            success: false,
-            message: "Failed to get image URL from Cloudinary",
-          });
+        return res.status(500).json({
+          success: false,
+          message: "Failed to get image URL from Cloudinary",
+        });
       }
 
-      console.log("Image URL to be saved:", imageUrl);
-
       const newProduct = new Product({
-        name: name.trim(),
+        name: name.toString().trim(),
         price: Number(price),
         stockQuantity: Number(stockQuantity),
-        category: category.trim(),
+        category: category.toString().trim(),
         status,
-        vendor: vendor.trim(),
+        vendor: vendor.toString().trim(),
         imageUrl,
       });
 
-      console.log("Product object before save:", newProduct.toObject());
-      await newProduct.validate(); // Explicitly validate before saving
-      console.log("Product validated successfully");
+      await newProduct.validate();
       const savedProduct = await newProduct.save();
-      console.log(
-        "Product saved successfully:",
-        savedProduct._id,
-        "Saved document:",
-        savedProduct.toObject()
-      );
 
-      res.status(201).json({ success: true, product: savedProduct.toObject() });
-    } catch (error: any) {
-      console.error("Error creating product:", error);
-      if (error.name === "ValidationError") {
-        const validationErrors = Object.values(error.errors || {})
-          .map((err: any) => err.message)
-          .join(", ");
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: `Validation error: ${validationErrors}`,
-          });
-      }
       return res
-        .status(500)
-        .json({
+        .status(201)
+        .json({ success: true, product: savedProduct.toObject() });
+    } catch (error: unknown) {
+      console.error("Error creating product:", error);
+
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        "name" in error &&
+        error.name === "ValidationError"
+      ) {
+        const validationErrors = Object.values(
+          (error as { errors?: Record<string, { message: string }> }).errors ||
+            {}
+        )
+          .map((e) => e.message)
+          .join(", ");
+
+        return res.status(400).json({
           success: false,
-          message: `Failed to create product: ${error.message}`,
+          message: `Validation error: ${validationErrors}`,
         });
+      }
+
+      const message =
+        error instanceof Error ? error.message : "Unknown server error";
+
+      return res.status(500).json({
+        success: false,
+        message: `Failed to create product: ${message}`,
+      });
     }
   });
 }

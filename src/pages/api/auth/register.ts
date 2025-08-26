@@ -36,8 +36,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       message: "User registered successfully",
       user: { id: user._id, username: user.username, email: user.email },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    let message = "Internal server error";
+
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
     console.error("Register error:", error);
-    return res.status(500).json({ message: error.message });
+    return res.status(500).json({ message });
   }
 }

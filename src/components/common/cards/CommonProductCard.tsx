@@ -1,9 +1,9 @@
 import CommonButton from "@/components/common/buttons/CommonButton";
-import { Product } from "@/interfaces";
+import { IProduct } from "@/interfaces";
 
 interface CommonProductCardProps {
   key?: string | number;
-  productData: Product;
+  productData: IProduct;
 }
 
 const CommonProductCard = ({

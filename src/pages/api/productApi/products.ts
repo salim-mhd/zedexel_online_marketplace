@@ -1,6 +1,8 @@
 import dbConnect from "@/lib/dbConnect";
-import Product from "@/models/product";
 import { NextApiRequest, NextApiResponse } from "next";
+import { FilterQuery } from "mongoose";
+import { IProduct } from "@/interfaces";
+import Product from "@/models/product";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") {
@@ -11,10 +13,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     await dbConnect();
 
     const { category, status, search, sort } = req.query;
-    console.log('status',status);
-    
 
-    const filter: any = {};
+    const filter: FilterQuery<IProduct> = {};
 
     if (category) {
       const categories = (category as string).split(",");
@@ -30,19 +30,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       filter.name = { $regex: search as string, $options: "i" };
     }
 
-    // Determine sort order
-    let sortOption: any = { createdAt: -1 }; // default: latest first
-    if (sort === "oldest") sortOption = { createdAt: 1 }; // oldest first
+    // Sorting
+    let sortOption: Record<string, 1 | -1> = { createdAt: -1 }; // default: latest
+    if (sort === "oldest") sortOption = { createdAt: 1 };
 
     const products = await Product.find(filter).sort(sortOption).lean();
 
     return res.status(200).json({ success: true, products });
-  } catch (error: any) {
-    console.error("Error fetching products:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      console.error("Error fetching products:", error.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch products",
+        error: error.message,
+      });
+    }
+
+    console.error("Unexpected error fetching products:", error);
     return res.status(500).json({
       success: false,
       message: "Failed to fetch products",
-      error: error.message,
     });
   }
 }
