@@ -38,7 +38,7 @@ export default function LoginForm() {
       setIsLoading(false);
       return;
     }
-    
+
     if (!validator.isEmail(email)) {
       setError("Please enter a valid email");
       toast.error("Please enter a valid email", {
@@ -126,6 +126,7 @@ export default function LoginForm() {
         <p className="mt-5 text-center text-sm text-gray-600">
           Don’t have an account?{" "}
           <span
+            onClick={() => router.replace("/register")}
             className="text-indigo-600 font-medium hover:underline"
           >
             Sign up

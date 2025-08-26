@@ -15,7 +15,7 @@ interface HeaderTopProps {
 
 // Top section with logo, search, and buttons
 const HeaderTop = ({ router }: HeaderTopProps) => {
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const { user, loading } = useSelector((state: RootState) => state.auth);
   const dispatch = useDispatch();
 
@@ -53,7 +53,9 @@ const HeaderTop = ({ router }: HeaderTopProps) => {
           ]}
           value={searchQuery}
           width="70%"
-          noLeftRadius onValueChange={(value)=> setSearchQuery(value)}        />
+          noLeftRadius
+          onValueChange={(value) => setSearchQuery(value)}
+        />
       </div>
       <div className="flex gap-2 md:gap-4 mt-4 md:mt-0 order-2 md:order-3">
         {user ? (
