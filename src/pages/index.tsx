@@ -148,7 +148,13 @@ export default function Home() {
       search: searchQuery,
       sort: sortOption,
     });
-  }, [checkedCategories, checkedStaus, searchQuery, sortOption, debouncedFetch]);
+  }, [
+    checkedCategories,
+    checkedStaus,
+    searchQuery,
+    sortOption,
+    debouncedFetch,
+  ]);
 
   return (
     <>
