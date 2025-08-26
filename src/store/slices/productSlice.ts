@@ -38,12 +38,9 @@ export const fetchProducts = createAsyncThunk<
     if (filters.search) params.append("search", filters.search);
     if (filters.sort) params.append("sort", filters.sort);
 
-    const res = await axios.get(
-      `/api/productApi/products?${params.toString()}`,
-      {
-        headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+    const res = await axios.get(`/api/productApi/products`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
 
     return res.data.products as IProduct[];
   } catch (err: unknown) {
