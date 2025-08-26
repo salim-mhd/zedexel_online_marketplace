@@ -11,12 +11,13 @@ import EmailIcon from "@mui/icons-material/Email";
 import LockIcon from "@mui/icons-material/Lock";
 import CommonTextField from "../common/formHelpers/CommonTextField";
 import CommonButton from "../common/buttons/CommonButton";
+import { isAxiosError } from "axios";
 
 export default function RegisterForm() {
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false); // ✅ loading state
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
   const dispatch = useAppDispatch();
 
@@ -24,34 +25,47 @@ export default function RegisterForm() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      router.replace("/"); // replace to prevent back navigation
+      router.replace("/");
     }
   }, [router]);
 
   const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    setLoading(true); // ✅ start loading
+    setLoading(true);
 
     try {
       const res = await dispatch(registerUser({ username, email, password }));
-      if (res.payload?.success) {
+
+      // `res` is a Redux action, so type-guard with `registerUser.fulfilled.match`
+      if (registerUser.fulfilled.match(res)) {
         toast.success("Registration successful!", {
           position: "top-right",
           autoClose: 1500,
         });
         setTimeout(() => router.push("/"), 2000);
       } else {
-        toast.error(res.payload || "Registration failed", {
+        toast.error(
+          (res.payload as string) || "Registration failed",
+          { position: "top-right", autoClose: 3000 }
+        );
+      }
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        toast.error(err.response?.data?.message || "Server error", {
           position: "top-right",
           autoClose: 3000,
         });
+        console.error("Register axios error:", err.response?.data);
+      } else if (err instanceof Error) {
+        toast.error(err.message, { position: "top-right", autoClose: 3000 });
+        console.error("Register error:", err.message);
+      } else {
+        toast.error("An unexpected error occurred.", {
+          position: "top-right",
+          autoClose: 3000,
+        });
+        console.error("Unknown register error:", err);
       }
-    } catch (err: any) {
-      toast.error("An unexpected error occurred. Please try again.", {
-        position: "top-right",
-        autoClose: 3000,
-      });
-      console.error("Register error:", err);
     } finally {
       setTimeout(() => setLoading(false), 1000);
     }
@@ -69,7 +83,7 @@ export default function RegisterForm() {
             label="Username"
             placeholder="Enter username"
             value={username}
-            onValueChange={(value) => setUsername(value)}
+            onValueChange={setUsername}
             icon={<AccountCircleIcon fontSize="small" />}
             required
           />
@@ -78,7 +92,7 @@ export default function RegisterForm() {
             placeholder="Enter email"
             type="email"
             value={email}
-            onValueChange={(value) => setEmail(value)}
+            onValueChange={setEmail}
             icon={<EmailIcon fontSize="small" />}
             required
           />
@@ -87,7 +101,7 @@ export default function RegisterForm() {
             placeholder="Enter password"
             type="password"
             value={password}
-            onValueChange={(value) => setPassword(value)}
+            onValueChange={setPassword}
             icon={<LockIcon fontSize="small" />}
             required
           />
