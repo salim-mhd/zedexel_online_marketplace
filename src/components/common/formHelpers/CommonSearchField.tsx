@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SearchIcon from "@mui/icons-material/Search";
 
 interface CommonSearchFieldProps {
@@ -6,14 +6,15 @@ interface CommonSearchFieldProps {
   options?: string[];
   label?: string;
   onSelect?: (option: string) => void;
-  onValueChange: (query: string) => void;
+  onValueChange: (value: string) => void;
+  value?: string; // ✅ controlled value
   placeholder?: string;
   className?: string;
   height?: string;
   width?: string;
   noLeftRadius?: boolean;
   noRightRadius?: boolean;
-  iconPosition?: "left" | "right"; // 👈 new prop
+  iconPosition?: "left" | "right";
 }
 
 const CommonSearchField: React.FC<CommonSearchFieldProps> = ({
@@ -22,20 +23,28 @@ const CommonSearchField: React.FC<CommonSearchFieldProps> = ({
   label,
   onSelect,
   onValueChange,
+  value, // controlled
   placeholder = "Search for products",
   className,
   height = "auto",
   width = "100%",
   noLeftRadius = false,
   noRightRadius = false,
-  iconPosition = "left", // 👈 default value
+  iconPosition = "left",
 }) => {
-  const [query, setQuery] = useState<string>("");
+  const [query, setQuery] = useState<string>(value || "");
+
+  // ✅ keep internal state in sync if value prop changes
+  useEffect(() => {
+    if (value !== undefined) {
+      setQuery(value);
+    }
+  }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setQuery(value);
-    onValueChange(value);
+    const val = e.target.value;
+    setQuery(val);
+    onValueChange(val);
   };
 
   return (
