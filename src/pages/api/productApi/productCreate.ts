@@ -1,8 +1,8 @@
-import formidable, { IncomingForm, Part } from "formidable";
+import { NextApiRequest, NextApiResponse } from "next";
+import { IncomingForm, File, Fields, Files, Part } from "formidable";
 import { v2 as cloudinary } from "cloudinary";
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/product";
-import { NextApiRequest, NextApiResponse } from "next";
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -33,18 +33,14 @@ export default async function handler(
   }
 
   await dbConnect();
-  console.log("MongoDB connected");
 
   const form = new IncomingForm({
-    maxFileSize: 5 * 1024 * 1024, // 5MB limit
-    filter: ({ mimetype }: Part): boolean => {
-      return (
-        mimetype !== null && ["image/jpeg", "image/png"].includes(mimetype)
-      );
-    },
+    maxFileSize: 5 * 1024 * 1024,
+    filter: ({ mimetype }: Part): boolean =>
+      mimetype !== null && ["image/jpeg", "image/png"].includes(mimetype),
   });
 
-  form.parse(req, async (err, fields, files) => {
+  form.parse(req, async (err: Error | null, fields: Fields, files: Files) => {
     if (err) {
       console.error("Form parsing error:", err);
       return res
@@ -69,10 +65,9 @@ export default async function handler(
     const vendor = Array.isArray(fields.vendor)
       ? fields.vendor[0]
       : fields.vendor;
-    const imageFile =
-      Array.isArray(files.image) && files.image.length > 0
-        ? files.image[0]
-        : null;
+    const imageFile = Array.isArray(files.image)
+      ? (files.image[0] as File)
+      : (files.image as File | undefined);
 
     if (
       !name ||
@@ -83,15 +78,6 @@ export default async function handler(
       !vendor ||
       !imageFile
     ) {
-      console.error("Missing fields:", {
-        name,
-        price,
-        stockQuantity,
-        category,
-        status,
-        vendor,
-        imageFile,
-      });
       return res
         .status(400)
         .json({
@@ -111,30 +97,21 @@ export default async function handler(
     }
 
     if (!["Active", "Inactive", "Out of Stock"].includes(status)) {
-      console.error("Invalid status:", status);
-      return res.status(400).json({
-        success: false,
-        message: "Status must be one of: Active, Inactive, Out of Stock",
-      });
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Status must be one of: Active, Inactive, Out of Stock",
+        });
     }
 
     try {
-      console.log("Uploading image to Cloudinary:", imageFile.filepath);
       const uploadResult = await cloudinary.uploader.upload(
         imageFile.filepath,
-        {
-          folder: "products",
-          resource_type: "image",
-        }
+        { folder: "products", resource_type: "image" }
       );
-      console.log("Cloudinary upload result:", uploadResult);
-
       const imageUrl = uploadResult.secure_url || uploadResult.url;
       if (!imageUrl) {
-        console.error(
-          "Cloudinary upload missing secure_url or url:",
-          uploadResult
-        );
         return res
           .status(500)
           .json({
@@ -143,49 +120,33 @@ export default async function handler(
           });
       }
 
-      console.log("Image URL to be saved:", imageUrl);
-
       const newProduct = new Product({
-        name: name.trim(),
+        name: String(name).trim(),
         price: Number(price),
         stockQuantity: Number(stockQuantity),
-        category: category.trim(),
+        category: String(category).trim(),
         status,
-        vendor: vendor.trim(),
+        vendor: String(vendor).trim(),
         imageUrl,
       });
 
-      console.log("Product object before save:", newProduct.toObject());
-      await newProduct.validate(); // Explicitly validate before saving
-      console.log("Product validated successfully");
+      await newProduct.validate();
       const savedProduct = await newProduct.save();
-      console.log(
-        "Product saved successfully:",
-        savedProduct._id,
-        "Saved document:",
-        savedProduct.toObject()
-      );
 
       res.status(201).json({ success: true, product: savedProduct.toObject() });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error creating product:", error);
-      if (error.name === "ValidationError") {
-        const validationErrors = Object.values(error.errors || {})
-          .map((err: any) => err.message)
-          .join(", ");
+      if (error instanceof Error) {
         return res
-          .status(400)
+          .status(500)
           .json({
             success: false,
-            message: `Validation error: ${validationErrors}`,
+            message: `Failed to create product: ${error.message}`,
           });
       }
       return res
         .status(500)
-        .json({
-          success: false,
-          message: `Failed to create product: ${error.message}`,
-        });
+        .json({ success: false, message: "Unknown error occurred" });
     }
   });
 }
