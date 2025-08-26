@@ -19,7 +19,7 @@ export default async function handler(
 
     const { category, status, search, sort } = req.query;
 
-    const filter: any = {};
+    const filter: Partial<Record<keyof IProduct, unknown>> = {};
 
     if (category) {
       const categories = (category as string).split(",");
