@@ -1,26 +1,62 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+    --color-primary: #304EA1;
+    --color-secondary: #6A6A6A;
+    --color-text: #FFFFFF;
+    --color-background: #FFFFFF;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    font-family: 'Open Sans', sans-serif;
+}
+
+.bg_primary {
+    background-color: var(--color-primary);
+}
+
+.text_primary {
+    color: var(--color-primary);
+}
+
+.text_secondary {
+    color: var(--color-text);
+}
+
+.text_color {
+    color: var(--color-text);
+}
+
+.main_hover {
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+
+    &:hover {
+        background-color: var(--color-primary);
+        color: white;
+    }
+}
+
+.button_fill {
+    background-color: var(--color-primary);
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+
+    &:hover {
+        filter: brightness(1.15);
+    }
+}
+
+.button_no_fill {
+    border: var(--color-primary) 1px solid;
+    background-color: white;
+    color: var(--color-primary);
+    cursor: pointer;
+    transition: all 0.3s ease-in-out;
+
+    &:hover {
+        background-color: var(--color-primary);
+        color: white;
+    }
 }
