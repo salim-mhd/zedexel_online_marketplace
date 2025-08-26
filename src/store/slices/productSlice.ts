@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { RootState } from "../store";
 import { Product } from "@/interfaces";
 
@@ -47,14 +47,19 @@ export const fetchProducts = createAsyncThunk<
     );
 
     return res.data.products as Product[];
-  } catch (err: any) {
-    return thunkAPI.rejectWithValue(
-      err.response?.data?.message || "Failed to fetch products"
-    );
+  } catch (err: unknown) {
+    let errorMessage = "Failed to fetch products";
+
+    if (err instanceof AxiosError) {
+      errorMessage = err.response?.data?.message || errorMessage;
+    }
+
+    return thunkAPI.rejectWithValue(errorMessage);
   }
 });
 
 // Create product with FormData
+
 export const createProduct = createAsyncThunk<
   Product,
   FormData,
@@ -69,10 +74,15 @@ export const createProduct = createAsyncThunk<
       },
     });
     return res.data.product as Product;
-  } catch (err: any) {
-    return thunkAPI.rejectWithValue(
-      err.response?.data?.message || "Failed to create product"
-    );
+  } catch (err: unknown) {
+    // Narrow the type here
+    let errorMessage = "Failed to create product";
+
+    if (err instanceof AxiosError) {
+      errorMessage = err.response?.data?.message || errorMessage;
+    }
+
+    return thunkAPI.rejectWithValue(errorMessage);
   }
 });
 

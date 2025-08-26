@@ -87,19 +87,17 @@ export default function CreateProductForm() {
       formData.append("vendor", data.vendor);
       formData.append("image", image);
 
-      const res: any = await dispatch(createProduct(formData));
-      console.log("Create product response:", res);
+      const product = await dispatch(createProduct(formData)).unwrap();
 
-      if (res.payload?._id) {
+      if (product?._id) {
         toast.success("Product created successfully!", { autoClose: 1500 });
         setTimeout(() => router.push("/"), 1000);
       } else {
-        console.error("Error payload:", res.payload);
-        toast.error(res.payload?.message || "Failed to create product");
+        toast.error("Failed to create product");
       }
-    } catch (err) {
+    } catch (err: unknown) {
       console.error("Unexpected error:", err);
-      toast.error("An unexpected error occurred.");
+      toast.error("Failed to create product");
     } finally {
       setLoading(false);
     }

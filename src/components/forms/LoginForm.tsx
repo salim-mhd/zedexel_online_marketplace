@@ -125,12 +125,11 @@ export default function LoginForm() {
         </form>
         <p className="mt-5 text-center text-sm text-gray-600">
           Don’t have an account?{" "}
-          <a
-            href="/register"
+          <span
             className="text-indigo-600 font-medium hover:underline"
           >
             Sign up
-          </a>
+          </span>
         </p>
       </div>
     </div>
