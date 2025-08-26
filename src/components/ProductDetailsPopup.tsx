@@ -6,7 +6,6 @@ import { IProduct } from "@/interfaces";
 import CommonDropdown from "@/components/common/formHelpers/CommonDropdown";
 import CommonTextField from "./common/formHelpers/CommonTextField";
 
-
 interface ProductDetailsPopupProps {
   product: IProduct;
   onClose: () => void;
@@ -53,7 +52,7 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({
         formDataToSend.append("image", file);
       }
 
-      if(!product._id) return
+      if (!product._id) return;
       await dispatch(
         updateProduct({ id: product._id, formData: formDataToSend })
       ).unwrap();
@@ -70,7 +69,8 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: name === "price" || name === "stockQuantity" ? Number(value) : value,
+      [name]:
+        name === "price" || name === "stockQuantity" ? Number(value) : value,
     }));
   };
 
@@ -144,7 +144,7 @@ const ProductDetailsPopup: React.FC<ProductDetailsPopupProps> = ({
                 options={statuses}
                 value={formData.status}
                 onSelect={(value) =>
-                  setFormData((prev) => ({ ...prev, status: value as any }))
+                  setFormData((prev) => ({ ...prev, status: value as string }))
                 }
               />
               <CommonTextField
