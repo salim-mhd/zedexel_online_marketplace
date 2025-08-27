@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
 
-if (!MONGODB_URI) {
-  throw new Error("Please add MONGODB_URI in .env.local");
+if (typeof MONGODB_URI !== "string" || !MONGODB_URI) {
+  throw new Error("Please define a valid MONGODB_URI in .env.local");
 }
 
 interface MongooseCache {
@@ -11,7 +11,7 @@ interface MongooseCache {
   promise: Promise<typeof mongoose> | null;
 }
 
-// 👇 Extend NodeJS global type so TS knows `global.mongoose`
+// Extend NodeJS global type for TypeScript
 declare global {
   // eslint-disable-next-line no-var
   var mongoose: MongooseCache | undefined;
@@ -24,12 +24,21 @@ async function dbConnect(): Promise<typeof mongoose> {
 
   if (!cached.promise) {
     cached.promise = mongoose
-      .connect(MONGODB_URI, { bufferCommands: false })
-      .then((m) => m);
+      .connect(MONGODB_URI, {
+        bufferCommands: false,
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        connectTimeoutMS: 10000,
+      })
+      .then((m) => m)
+      .catch((error) => {
+        console.error("MongoDB connection error:", error);
+        throw error;
+      });
   }
 
   cached.conn = await cached.promise;
-  global.mongoose = cached; // 👈 strongly typed, no `any`
+  global.mongoose = cached;
   return cached.conn;
 }
 

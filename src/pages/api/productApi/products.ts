@@ -1,7 +1,7 @@
 import { IProduct } from "@/interfaces";
 import dbConnect from "@/lib/dbConnect";
 import Product from "@/models/product";
-import { SortOrder } from "mongoose";
+import { FilterQuery, SortOrder } from "mongoose";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -19,37 +19,47 @@ export default async function handler(
 
     const { category, status, search, sort } = req.query;
 
-    const filter: Partial<Record<keyof IProduct, unknown>> = {};
+    const filter: FilterQuery<IProduct> = {};
 
-    if (category) {
-      const categories = (category as string).split(",");
-      if (!categories.includes("All")) filter.category = { $in: categories };
+    if (typeof category === "string" && category !== "") {
+      const categories = category.split(",");
+      if (categories.length > 0 && !categories.includes("All")) {
+        filter.category = { $in: categories };
+      }
     }
 
-    if (status) {
-      const statuses = (status as string).split(",");
-      if (!statuses.includes("All")) filter.status = { $in: statuses };
+    if (typeof status === "string" && status !== "") {
+      const statuses = status.split(",");
+      if (statuses.length > 0 && !statuses.includes("All")) {
+        filter.status = { $in: statuses };
+      }
     }
 
-    if (search) {
-      filter.name = { $regex: search as string, $options: "i" };
+    if (typeof search === "string" && search !== "") {
+      const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      filter.name = { $regex: escapedSearch, $options: "i" };
     }
 
-    // Determine sort order
+    const validSorts = ["oldest", "newest"];
     const sortOption: { [key: string]: SortOrder } =
-      sort === "oldest" ? { createdAt: 1 } : { createdAt: -1 };
+      typeof sort === "string" && sort === "oldest"
+        ? { createdAt: 1 }
+        : { createdAt: -1 };
 
     const products = await Product.find(filter)
       .sort(sortOption)
       .lean<IProduct[]>();
 
-    return res.status(200).json({ success: true, products });
+    return res.status(200).json({
+      success: true,
+      message: "Products fetched successfully",
+      products,
+    });
   } catch (error: unknown) {
     console.error("Error fetching products:", error);
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch products",
-      error: error,
+      message: "Internal server error",
     });
   }
 }
