@@ -1,44 +1,29 @@
-import mongoose, { Mongoose } from "mongoose";
+import mongoose from "mongoose";
 
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:0000/zedexel";
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/zedexel' as string;
 
 if (!MONGODB_URI) {
   throw new Error("Please add MONGODB_URI in .env.local");
 }
 
-interface MongooseCache {
-  conn: Mongoose | null;
-  promise: Promise<Mongoose> | null;
+let cached = (global as any).mongoose;
+
+if (!cached) {
+  cached = (global as any).mongoose = { conn: null, promise: null };
 }
 
-// Extend NodeJS global type for TypeScript
-declare global {
-  // eslint-disable-next-line no-var
-  var mongoose: MongooseCache | undefined;
-}
-
-// Use const instead of let to fix ESLint prefer-const error
-const cached: MongooseCache = global.mongoose ?? { conn: null, promise: null };
-
-async function dbConnect(): Promise<Mongoose> {
-  if (cached.conn) {
-    return cached.conn;
-  }
+async function dbConnect(): Promise<typeof mongoose> {
+  console.log('MONGODB_URI', MONGODB_URI);
+  
+  if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    try {
-      cached.promise = mongoose.connect(MONGODB_URI, {
-        bufferCommands: false,
-      });
-    } catch (error: unknown) {
-      cached.promise = null; // Reset promise on failure
-      throw new Error(`MongoDB connection failed: ${error}`);
-    }
+    cached.promise = mongoose.connect(MONGODB_URI, {
+      bufferCommands: false,
+    }).then((mongoose) => mongoose);
   }
 
   cached.conn = await cached.promise;
-  global.mongoose = cached; // Persist cache for module reuse
   return cached.conn;
 }
 
