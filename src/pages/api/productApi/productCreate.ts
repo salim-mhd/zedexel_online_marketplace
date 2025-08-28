@@ -130,7 +130,6 @@ export default async function handler(
         imageUrl,
       });
 
-      await newProduct.validate();
       const savedProduct = await newProduct.save();
 
       res.status(201).json({ success: true, product: savedProduct.toObject() });
