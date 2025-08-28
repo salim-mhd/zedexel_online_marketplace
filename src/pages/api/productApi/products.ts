@@ -40,7 +40,6 @@ export default async function handler(
       filter.name = { $regex: escapedSearch, $options: "i" };
     }
 
-    const validSorts = ["oldest", "newest"];
     const sortOption: { [key: string]: SortOrder } =
       typeof sort === "string" && sort === "oldest"
         ? { createdAt: 1 }
@@ -49,6 +48,9 @@ export default async function handler(
     const products = await Product.find(filter)
       .sort(sortOption)
       .lean<IProduct[]>();
+
+      console.log('products', products);
+      
 
     return res.status(200).json({
       success: true,

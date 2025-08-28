@@ -146,7 +146,7 @@ export default async function handler(
       }
       return res
         .status(500)
-        .json({ success: false, message: "Unknown error occurred" });
+        .json({ success: false, message: `Unknown error occurred: ${error}` });
     }
   });
 }
